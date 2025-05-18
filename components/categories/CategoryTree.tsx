@@ -240,8 +240,9 @@ function SortableCategory({
                   onAddSub={onAddSub}
                   onDelete={onDelete}
                   depth={depth + 1}
-                  parentId={category.id}
-                />
+                  parentId={category.id} onEdit={function (category: any): void {
+                    throw new Error("Function not implemented.");
+                  } }                />
               ))}
             </SortableContext>
           </DndContext>
@@ -314,15 +315,16 @@ export function CategoryTree({
           strategy={verticalListSortingStrategy}
         >
           <div className="space-y-2">
-            {filteredCategories.map((category) => (
+            {filteredCategories.map((category: any) => (
               <SortableCategory
                 key={category.id}
                 category={category}
                 isSelected={selectedCategory?.id === category.id}
                 onSelect={onSelectCategory}
                 onAddSub={onAddSubCategory}
-                onDelete={onDeleteCategory}
-              />
+                onDelete={onDeleteCategory} onEdit={function (category: any): void {
+                  throw new Error("Function not implemented.");
+                } }              />
             ))}
           </div>
         </SortableContext>

@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -16,7 +23,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Utensils, Leaf, Flame, GripVertical, Power, PowerOff } from "lucide-react";
+import {
+  Utensils,
+  Leaf,
+  Flame,
+  GripVertical,
+  Power,
+  PowerOff,
+} from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
@@ -53,10 +67,12 @@ interface MenuItem {
   itemType: string;
   sortOrder: number;
   isAvailable: boolean;
+  entityCuisineId?: string;
 }
 
 interface MenuItemListProps {
   items: MenuItem[];
+  cuisineMap: Map<string, string>;
   totalItems: number;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
@@ -74,9 +90,18 @@ interface SortableItemProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onToggleAvailability: (id: string, value: boolean) => void;
+  cuisineMap: Map<string, string>;
 }
 
-function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAvailability }: SortableItemProps) {
+function SortableItem({
+  item,
+  isSelected,
+  onSelect,
+  onEdit,
+  onDelete,
+  onToggleAvailability,
+  cuisineMap
+}: SortableItemProps) {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const {
@@ -88,16 +113,18 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
     isDragging,
   } = useSortable({ id: item.id });
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    transition,
-    zIndex: isDragging ? 1 : 0,
-    opacity: isDragging ? 0.5 : 1,
-  } : undefined;
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        transition,
+        zIndex: isDragging ? 1 : 0,
+        opacity: isDragging ? 0.5 : 1,
+      }
+    : undefined;
 
   const handleRowClick = (e: React.MouseEvent) => {
     // Only open the edit slider if clicking on the row itself
-    const isActionButton = (e.target as HTMLElement).closest('button');
+    const isActionButton = (e.target as HTMLElement).closest("button");
     if (!isActionButton) {
       e.stopPropagation();
       onEdit(item.id);
@@ -105,7 +132,7 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
   };
 
   return (
-    <TableRow 
+    <TableRow
       ref={setNodeRef}
       style={style}
       className={cn(
@@ -116,7 +143,11 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
     >
       <TableCell className="w-[50px]">
         <div className="flex items-center gap-2">
-          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing"
+          >
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </div>
           <Checkbox
@@ -126,27 +157,33 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
           />
         </div>
       </TableCell>
-      <TableCell className="font-mono text-sm">
-        {item.itemCode}
-      </TableCell>
+      <TableCell className="font-mono text-sm">{item.itemCode}</TableCell>
       <TableCell>
         <div className="space-y-1">
           <HoverCard>
             <HoverCardTrigger asChild>
               <div>
-                <div className="font-medium line-clamp-1">{item.name}</div>
+                <div className="font-medium line-clamp-1">{item.name}
+
+                </div>
                 <div className="text-sm text-muted-foreground line-clamp-1">
                   {item.description}
                 </div>
+                
               </div>
             </HoverCardTrigger>
             <HoverCardContent className="w-80">
               <div className="space-y-2">
                 <h4 className="font-medium text-base">{item.name}</h4>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
+                <p className="text-sm text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             </HoverCardContent>
           </HoverCard>
+          <p className="text-xs text-muted-foreground">
+      Cuisine: {cuisineMap.get(item.entityCuisineId || "") || "Unknown"}
+    </p>
         </div>
       </TableCell>
       <TableCell>
@@ -154,17 +191,20 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
           <HoverCardTrigger asChild>
             <div>
               <Badge className={getCategoryColor(item.category)}>
-                {item.category.split('-').map(word => 
-                  word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(' ')}
+                {(item.category || "uncategorized")
+                  .split("-")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
               </Badge>
             </div>
           </HoverCardTrigger>
           <HoverCardContent className="w-60">
             <div className="text-sm">
-              View all items in {item.category.split('-').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-              ).join(' ')}
+              View all items in{" "}
+              {item.category
+                .split("-")
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ")}
             </div>
           </HoverCardContent>
         </HoverCard>
@@ -182,7 +222,8 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
               <div className="font-medium cursor-help">
                 ${item.price.toFixed(2)}
                 <div className="text-xs text-muted-foreground">
-                  Cost: ${item.foodCost.toFixed(2)} ({((item.foodCost / item.price) * 100).toFixed(1)}%)
+                  Cost: ${item.foodCost.toFixed(2)} (
+                  {((item.foodCost / item.price) * 100).toFixed(1)}%)
                 </div>
               </div>
             </HoverCardTrigger>
@@ -190,7 +231,9 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between border-b pb-2">
                   <span className="font-medium text-sm">Section Pricing</span>
-                  <span className="text-xs text-muted-foreground">Base Price: ${item.price.toFixed(2)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    Base Price: ${item.price.toFixed(2)}
+                  </span>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
@@ -198,32 +241,42 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
                       <div className="w-2 h-2 rounded-full bg-teal-600"></div>
                       <span className="text-sm">Dining Room</span>
                     </div>
-                    <div className="text-sm font-medium">${item.price.toFixed(2)}</div>
+                    <div className="text-sm font-medium">
+                      ${item.price.toFixed(2)}
+                    </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-purple-600"></div>
                       <span className="text-sm">Takeout</span>
                     </div>
-                    <div className="text-sm font-medium">${(item.price * 0.95).toFixed(2)}</div>
+                    <div className="text-sm font-medium">
+                      ${(item.price * 0.95).toFixed(2)}
+                    </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue-600"></div>
                       <span className="text-sm">Delivery</span>
                     </div>
-                    <div className="text-sm font-medium">${(item.price * 1.1).toFixed(2)}</div>
+                    <div className="text-sm font-medium">
+                      ${(item.price * 1.1).toFixed(2)}
+                    </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-orange-600"></div>
                       <span className="text-sm">Catering</span>
                     </div>
-                    <div className="text-sm font-medium">${(item.price * 1.2).toFixed(2)}</div>
+                    <div className="text-sm font-medium">
+                      ${(item.price * 1.2).toFixed(2)}
+                    </div>
                   </div>
                 </div>
                 <div className="border-t pt-3 mt-3">
-                  <div className="text-xs font-medium text-muted-foreground mb-2">Additional Charges</div>
+                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                    Additional Charges
+                  </div>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span>Service Fee (10%)</span>
@@ -249,10 +302,19 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
           <Switch
             className="data-[state=checked]:bg-teal-600 data-[state=unchecked]:bg-muted"
             checked={item.isAvailable}
-            onCheckedChange={(checked) => onToggleAvailability(item.id, checked)}
+            onCheckedChange={(checked) =>
+              onToggleAvailability(item.id, checked)
+            }
             onClick={(e) => e.stopPropagation()}
           />
-          <Badge variant="outline" className={item.isAvailable ? "bg-teal-50 text-teal-700 border-teal-200" : "bg-muted/50 text-muted-foreground border-muted"}>
+          <Badge
+            variant="outline"
+            className={
+              item.isAvailable
+                ? "bg-teal-50 text-teal-700 border-teal-200"
+                : "bg-muted/50 text-muted-foreground border-muted"
+            }
+          >
             {item.isAvailable ? "Available" : "Unavailable"}
           </Badge>
         </div>
@@ -287,9 +349,9 @@ function SortableItem({ item, isSelected, onSelect, onEdit, onDelete, onToggleAv
 
 const getItemTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
-    case 'vegetarian':
+    case "vegetarian":
       return <Leaf className="h-4 w-4 text-teal-600" />;
-    case 'spicy':
+    case "spicy":
       return <Flame className="h-4 w-4 text-red-600" />;
     default:
       return <Utensils className="h-4 w-4 text-muted-foreground" />;
@@ -298,21 +360,22 @@ const getItemTypeIcon = (type: string) => {
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case 'appetizers':
-      return 'bg-teal-100 text-teal-800';
-    case 'main-course':
-      return 'bg-blue-100 text-blue-800';
-    case 'desserts':
-      return 'bg-pink-100 text-pink-800';
-    case 'beverages':
-      return 'bg-purple-100 text-purple-800';
+    case "appetizers":
+      return "bg-teal-100 text-teal-800";
+    case "main-course":
+      return "bg-blue-100 text-blue-800";
+    case "desserts":
+      return "bg-pink-100 text-pink-800";
+    case "beverages":
+      return "bg-purple-100 text-purple-800";
     default:
-      return 'bg-muted text-muted-foreground';
+      return "bg-muted text-muted-foreground";
   }
 };
 
 export function MenuItemList({
   items,
+  cuisineMap,
   totalItems,
   onEdit,
   onDelete,
@@ -322,6 +385,7 @@ export function MenuItemList({
   itemsPerPage,
   onPageChange,
 }: MenuItemListProps) {
+  
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -356,7 +420,7 @@ export function MenuItemList({
     if (selectedItems.size === items.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(items.map(item => item.id)));
+      setSelectedItems(new Set(items.map((item) => item.id)));
     }
   };
 
@@ -375,10 +439,15 @@ export function MenuItemList({
       {selectedItems.size > 0 && (
         <div className="flex items-center justify-between p-4 bg-muted/30 border-b">
           <span className="text-sm font-medium">
-            {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+            {selectedItems.size} item{selectedItems.size !== 1 ? "s" : ""}{" "}
+            selected
           </span>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setSelectedItems(new Set())}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedItems(new Set())}
+            >
               Clear Selection
             </Button>
             <Button variant="default" size="sm">
@@ -414,6 +483,8 @@ export function MenuItemList({
               </TableRow>
             </TableHeader>
             <TableBody>
+  
+ 
               {items.map((item, index) => (
                 <SortableItem
                   key={item.id}
@@ -423,6 +494,7 @@ export function MenuItemList({
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onToggleAvailability={onToggleAvailability}
+                  cuisineMap={cuisineMap}
                 />
               ))}
             </TableBody>
@@ -443,7 +515,9 @@ export function MenuItemList({
       {totalPages > 1 && (
         <div className="flex items-center justify-center space-x-2 p-4 border-t">
           <span className="text-sm text-muted-foreground mr-4">
-            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} items
+            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
+            items
           </span>
           <Button
             variant="outline"

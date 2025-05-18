@@ -3,8 +3,15 @@
 import { useState, useEffect } from "react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useGetCuisineListMutation } from "@/features/cuisine/cuisineApi";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -14,357 +21,147 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MenuCategoryFilter } from "@/components/menu/MenuCategoryFilter";
 import { MenuItemList } from "@/components/menu/MenuItemList";
-import { Plus, Settings2, Search, Leaf, Drumstick, Egg, Wine, Filter } from "lucide-react";
+import {
+  Plus,
+  Settings2,
+  Search,
+  Leaf,
+  Drumstick,
+  Egg,
+  Wine,
+  Filter,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavigationPanel } from "@/components/menu/NavigationPanel";
 import { BulkOperationsWizard } from "@/components/menu/BulkOperationsWizard";
 import { useToast } from "@/hooks/use-toast";
 import { MenuItemSlider } from "@/components/menu/MenuItemSlider";
-
+import { MenuItem } from "@/types/menu";
+import { useGetProductListMutation } from "@/features/product/productApi";
 // Mock data - replace with actual data fetching
-const categories = [{
-  id: "all",
-  name: "All Items",
-  isEnabled: true
-}, { 
-  id: "appetizers",
-  name: "Appetizers",
-  isEnabled: true
-}, { 
-  id: "main-course",
-  name: "Main Course",
-  isEnabled: true
-}, { 
-  id: "desserts",
-  name: "Desserts",
-  isEnabled: true
-}, { 
-  id: "beverages",
-  name: "Beverages",
-  isEnabled: true
-}, {
-  id: "pizza",
-  name: "Pizza",
-  isEnabled: true
-}, {
-  id: "pasta",
-  name: "Pasta",
-  isEnabled: true
-}, {
-  id: "salads",
-  name: "Salads",
-  isEnabled: true
-}, {
-  id: "sandwiches",
-  name: "Sandwiches",
-  isEnabled: true
-}, {
-  id: "seafood",
-  name: "Seafood",
-  isEnabled: true
-}, {
-  id: "sides",
-  name: "Sides",
-  isEnabled: true
-}];
 
-const allMenuItems = [
-  { id: "all", name: "All Items" },
-  { id: "appetizers", name: "Appetizers" },
-  { id: "main-course", name: "Main Course" },
-  { id: "desserts", name: "Desserts" },
-  { id: "beverages", name: "Beverages" },
-  { id: "pizza", name: "Pizza" },
-  { id: "pasta", name: "Pasta" },
-  { id: "salads", name: "Salads" },
-  { id: "sandwiches", name: "Sandwiches" },
-  { id: "seafood", name: "Seafood" },
-  { id: "sides", name: "Sides" },
-];
-
-const menuItems = [
-  {
-    id: "1",
-    name: "Classic Caesar Salad",
-    category: "appetizers",
-    description: "Crisp romaine lettuce, parmesan cheese, croutons, and our house-made Caesar dressing",
-    price: 12.99,
-    foodCost: 4.50,
-    itemCode: "APP001",
-    itemType: "Vegetarian",
-    sortOrder: 1,
-    isAvailable: true,
-  },
-  {
-    id: "2",
-    name: "Grilled Salmon",
-    category: "main-course",
-    description: "Fresh Atlantic salmon fillet, grilled to perfection, served with seasonal vegetables",
-    price: 24.99,
-    foodCost: 8.75,
-    itemCode: "MAIN001",
-    itemType: "Seafood",
-    sortOrder: 2,
-    isAvailable: true,
-  },
-  {
-    id: "3",
-    name: "Chocolate Lava Cake",
-    category: "desserts",
-    description: "Warm chocolate cake with a molten center, served with vanilla ice cream",
-    price: 8.99,
-    foodCost: 2.50,
-    itemCode: "DES001",
-    itemType: "Dessert",
-    sortOrder: 3,
-    isAvailable: true,
-  },
-  {
-    id: "4",
-    name: "Craft Mojito",
-    category: "beverages",
-    description: "Fresh mint, lime juice, premium rum, and soda water",
-    price: 10.99,
-    foodCost: 3.25,
-    itemCode: "BEV001",
-    itemType: "Cocktail",
-    sortOrder: 4,
-    isAvailable: false,
-  },
-  {
-    id: "5",
-    name: "Margherita Pizza",
-    category: "main-course",
-    description: "Fresh mozzarella, tomatoes, and basil on our house-made crust",
-    price: 16.99,
-    foodCost: 5.50,
-    itemCode: "MAIN002",
-    itemType: "Vegetarian",
-    sortOrder: 5,
-    isAvailable: true,
-  },
-  {
-    id: "6",
-    name: "Bruschetta",
-    category: "appetizers",
-    description: "Grilled bread rubbed with garlic and topped with diced tomatoes, fresh basil, and olive oil",
-    price: 9.99,
-    foodCost: 3.25,
-    itemCode: "APP002",
-    itemType: "Vegetarian",
-    sortOrder: 6,
-    isAvailable: true,
-  },
-  {
-    id: "7",
-    name: "Tiramisu",
-    category: "desserts",
-    description: "Classic Italian dessert with layers of coffee-soaked ladyfingers and mascarpone cream",
-    price: 8.99,
-    foodCost: 3.50,
-    itemCode: "DES002",
-    itemType: "Dessert",
-    sortOrder: 7,
-    isAvailable: true,
-  },
-  {
-    id: "8",
-    name: "Espresso Martini",
-    category: "beverages",
-    description: "Premium vodka, coffee liqueur, and fresh espresso",
-    price: 12.99,
-    foodCost: 4.25,
-    itemCode: "BEV002",
-    itemType: "Cocktail",
-    sortOrder: 8,
-    isAvailable: true,
-  },
-  {
-    id: "9",
-    name: "Caprese Salad",
-    category: "salads",
-    description: "Fresh mozzarella, tomatoes, and basil drizzled with balsamic glaze",
-    price: 11.99,
-    foodCost: 4.25,
-    itemCode: "SAL001",
-    itemType: "Vegetarian",
-    sortOrder: 9,
-    isAvailable: true,
-  },
-  {
-    id: "10",
-    name: "Fettuccine Alfredo",
-    category: "pasta",
-    description: "Homemade fettuccine in a rich, creamy parmesan sauce",
-    price: 18.99,
-    foodCost: 5.75,
-    itemCode: "PAS001",
-    itemType: "Vegetarian",
-    sortOrder: 10,
-    isAvailable: true,
-  },
-  {
-    id: "11",
-    name: "BBQ Chicken Pizza",
-    category: "pizza",
-    description: "Grilled chicken, red onions, and BBQ sauce on our signature crust",
-    price: 19.99,
-    foodCost: 6.50,
-    itemCode: "PIZ001",
-    itemType: "Specialty",
-    sortOrder: 11,
-    isAvailable: true,
-  },
-  {
-    id: "12",
-    name: "Club Sandwich",
-    category: "sandwiches",
-    description: "Triple-decker with turkey, bacon, lettuce, and tomato",
-    price: 14.99,
-    foodCost: 4.75,
-    itemCode: "SAN001",
-    itemType: "Sandwich",
-    sortOrder: 12,
-    isAvailable: true,
-  },
-  {
-    id: "13",
-    name: "Grilled Sea Bass",
-    category: "seafood",
-    description: "Fresh sea bass with herbs and lemon butter sauce",
-    price: 28.99,
-    foodCost: 10.50,
-    itemCode: "SEA001",
-    itemType: "Seafood",
-    sortOrder: 13,
-    isAvailable: true,
-  },
-  {
-    id: "14",
-    name: "Truffle Fries",
-    category: "sides",
-    description: "Hand-cut fries tossed with truffle oil and parmesan",
-    price: 8.99,
-    foodCost: 2.75,
-    itemCode: "SID001",
-    itemType: "Vegetarian",
-    sortOrder: 14,
-    isAvailable: true,
-  },
-  {
-    id: "15",
-    name: "Spicy Buffalo Wings",
-    category: "appetizers",
-    description: "Crispy chicken wings tossed in our signature buffalo sauce, served with blue cheese dip",
-    price: 13.99,
-    foodCost: 4.75,
-    itemCode: "APP003",
-    itemType: "Spicy",
-    sortOrder: 15,
-    isAvailable: true,
-  },
-  {
-    id: "16",
-    name: "Quattro Formaggi Pizza",
-    category: "pizza",
-    description: "Four cheese blend of mozzarella, gorgonzola, parmesan, and fontina",
-    price: 21.99,
-    foodCost: 7.50,
-    itemCode: "PIZ002",
-    itemType: "Vegetarian",
-    sortOrder: 16,
-    isAvailable: true,
-  },
-  {
-    id: "17",
-    name: "Lobster Ravioli",
-    category: "pasta",
-    description: "Handmade ravioli filled with fresh lobster in a champagne cream sauce",
-    price: 26.99,
-    foodCost: 9.75,
-    itemCode: "PAS002",
-    itemType: "Seafood",
-    sortOrder: 17,
-    isAvailable: true,
-  },
-  {
-    id: "18",
-    name: "Greek Salad",
-    category: "salads",
-    description: "Fresh cucumbers, tomatoes, olives, and feta cheese with oregano vinaigrette",
-    price: 12.99,
-    foodCost: 4.25,
-    itemCode: "SAL002",
-    itemType: "Vegetarian",
-    sortOrder: 18,
-    isAvailable: true,
-  },
-  {
-    id: "19",
-    name: "Craft Gin & Tonic",
-    category: "beverages",
-    description: "Premium gin with artisanal tonic water, garnished with botanicals",
-    price: 13.99,
-    foodCost: 4.50,
-    itemCode: "BEV003",
-    itemType: "Cocktail",
-    sortOrder: 19,
-    isAvailable: true,
-  },
-  {
-    id: "20",
-    name: "New York Cheesecake",
-    category: "desserts",
-    description: "Classic creamy cheesecake with berry compote",
-    price: 9.99,
-    foodCost: 3.75,
-    itemCode: "DES003",
-    itemType: "Dessert",
-    sortOrder: 20,
-    isAvailable: true,
-  },
-  {
-    id: "21",
-    name: "Grilled Octopus",
-    category: "seafood",
-    description: "Tender octopus with olive oil, lemon, and Mediterranean herbs",
-    price: 24.99,
-    foodCost: 8.75,
-    itemCode: "SEA002",
-    itemType: "Seafood",
-    sortOrder: 21,
-    isAvailable: true,
-  }
-];
+interface Cuisine {
+  entityCuisineId: string;
+  entityCuisineName: string;
+}
 
 export default function MenuPage() {
+  const [getProductList] = useGetProductListMutation();
+
+  const [items, setItems] = useState<MenuItem[]>([]);
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
   const [mounted, setMounted] = useState(false);
   const [isSliderOpen, setIsSliderOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<MenuItem | undefined>(undefined);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | undefined>(
+    undefined
+  );
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
-  const [foodTypeFilter, setFoodTypeFilter] = useState<"all" | "veg" | "non-veg" | "egg" | "bar">("all");
-  const [availabilityFilter, setAvailabilityFilter] = useState<"all" | "available" | "unavailable">("all");
-  const [enabledCategories, setEnabledCategories] = useState(
-    new Set(categories.map(cat => cat.id))
-  );
-  const [items, setItems] = useState<MenuItem[]>(menuItems);
+  const [foodTypeFilter, setFoodTypeFilter] = useState<
+    "all" | "veg" | "non-veg" | "egg" | "bar"
+  >("all");
+  const [availabilityFilter, setAvailabilityFilter] = useState<
+    "all" | "available" | "unavailable"
+  >("all");
+  const [categories, setCategories] = useState<
+    { id: string; name: string; isEnabled: boolean }[]
+  >([{ id: "all", name: "All Items", isEnabled: true }]);
+  const [enabledCategories, setEnabledCategories] = useState(new Set(["all"]));
+  // ✅ Keep this empty initially
+  // Replace with actual data fetching
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!mounted) return;
+    if (typeof window === "undefined") return;
+    const jwt = localStorage.getItem("jwt");
+    const entityId = localStorage.getItem("entityId");
+    if (!jwt || !entityId) {
+      console.warn("JWT or Entity ID missing");
+      return;
+    }
+     
+
+    console.log(" Calling getCuisineList with:", { entityId });
+
+    getProductList({ entityId, isBar: false })
+      .unwrap()
+      .then((res) => {
+        console.log("Products API success:", res);
+        console.log(" Products:", res.data);
+        setItems(res.data );
+        console.log(
+          " Items set:",
+          res.data.map((item) => ({
+            name: item.name,
+            entityCuisineId: item.entityCuisineId,
+          }))
+        );
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+      });
+  }, [mounted]);
+
+  const [getCuisineList] = useGetCuisineListMutation();
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const jwt = localStorage.getItem("jwt");
+    const entityId = localStorage.getItem("entityId");
+
+    if (!jwt || !entityId) {
+      console.warn("JWT or Entity ID missing");
+      return;
+    }
+
+    console.log(" Calling getCuisineList");
+
+    getCuisineList({ entityId, isBar: false })
+      .unwrap()
+      .then((res) => {
+        console.log(" Cuisine fetched:", res);
+        console.table(res.data);
+        const cuisineOptions = (res.data as Cuisine[]).map((c) => ({
+          id: c.entityCuisineId,
+          name: c.entityCuisineName,
+          isEnabled: true,
+        }));
+        console.log(" Final categories:", cuisineOptions);
+        setCategories([
+          { id: "all", name: "All Items", isEnabled: true },
+          ...cuisineOptions,
+        ]);
+        setEnabledCategories(
+          new Set(["all", ...cuisineOptions.map((c) => c.id)])
+        );
+      })
+      .catch((err) => {
+        console.error(" Error fetching cuisines:", err);
+      });
+  }, [mounted]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, activeCategory, enabledCategories, priceRange, availabilityFilter, foodTypeFilter]);
+  }, [
+    searchQuery,
+    activeCategory,
+    enabledCategories,
+    priceRange,
+    availabilityFilter,
+    foodTypeFilter,
+  ]);
 
   const handleEditItem = (id: string) => {
-    const item = items.find(item => item.id === id);
+    const item = items.find((item) => item.id === id);
     if (item) {
       setSelectedItem({
         ...item,
@@ -373,7 +170,7 @@ export default function MenuPage() {
         isCustomizable: item.isCustomizable || false,
         imageUrls: item.imageUrls || [],
         storeSettings: item.storeSettings || [],
-        modifierGroups: item.modifierGroups || []
+        modifierGroups: item.modifierGroups || [],
       });
     }
     setIsSliderOpen(true);
@@ -391,46 +188,59 @@ export default function MenuPage() {
       foodCost: 0,
       itemCode: "",
       itemType: "veg",
-      sortOrder: menuItems.length + 1,
+      sortOrder: items.length + 1,
       isAvailable: true,
       isCustomizable: false,
       serviceSections: ["dining"],
       imageUrls: [],
       storeSettings: [],
-      modifierGroups: []
+      modifierGroups: [],
+      entityCuisineId: "",
+      nutritionalInfo: {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+      },
     });
     setIsSliderOpen(true);
   };
 
   const handleSaveItem = (item: MenuItem) => {
-    setItems(prevItems => {
+    setItems((prevItems) => {
       if (item.id === "new") {
         // Generate a new ID
-        const newId = (Math.max(...prevItems.map(i => parseInt(i.id) || 0)) + 1).toString();
+        const newId = (
+          Math.max(...prevItems.map((i) => parseInt(i.id) || 0)) + 1
+        ).toString();
         const newItem = {
           ...item,
           id: newId,
-          sortOrder: prevItems.length + 1
+          sortOrder: prevItems.length + 1,
         };
 
         toast({
           title: "Item Created Successfully",
           description: `${item.name} has been added to the menu.`,
-          className: "bg-gradient-to-r from-teal-600 to-teal-700 text-white border-none",
+          className:
+            "bg-gradient-to-r from-teal-600 to-teal-700 text-white border-none",
         });
         return [...prevItems, newItem];
       } else {
         const updatedItem = {
           ...item,
-          sortOrder: prevItems.find(i => i.id === item.id)?.sortOrder || item.sortOrder
+          sortOrder:
+            prevItems.find((i) => i.id === item.id)?.sortOrder ||
+            item.sortOrder,
         };
 
         toast({
           title: "Item Updated Successfully",
           description: `${item.name} has been updated.`,
-          className: "bg-gradient-to-r from-teal-600 to-teal-700 text-white border-none",
+          className:
+            "bg-gradient-to-r from-teal-600 to-teal-700 text-white border-none",
         });
-        return prevItems.map(i => i.id === item.id ? updatedItem : i);
+        return prevItems.map((i) => (i.id === item.id ? updatedItem : i));
       }
     });
     setIsSliderOpen(false);
@@ -438,15 +248,15 @@ export default function MenuPage() {
   };
 
   const handleToggleAvailability = (id: string, value: boolean) => {
-    setItems(prevItems => 
-      prevItems.map(item => 
+    setItems((prevItems) =>
+      prevItems.map((item) =>
         item.id === id ? { ...item, isAvailable: value } : item
       )
     );
   };
 
   const toggleCategory = (categoryId: string) => {
-    setEnabledCategories(prev => {
+    setEnabledCategories((prev) => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
         next.delete(categoryId);
@@ -458,31 +268,53 @@ export default function MenuPage() {
   };
 
   // Memoized filtering logic
+  const cuisineMap = useMemo(() => {
+    const map = new Map<string, string>();
+    categories.forEach((c) => map.set(c.id, c.name));
+    return map;
+  }, [categories]);
+
   const filteredItems = useMemo(() => {
     const searchLower = searchQuery.toLowerCase();
-    return items.filter(item => {
+    return items.filter((item) => {
+      const matchesCategory =
+      activeCategory === "all" || item.entityCuisineId === activeCategory;
+      const categoryEnabled = item.entityCuisineId
+      ? enabledCategories.has(item.entityCuisineId)
+      : enabledCategories.has("all");
+      if (!matchesCategory || !categoryEnabled) return false;
+      
       // Category filter
-      const matchesCategory = activeCategory === "all" || item.category === activeCategory;
-      if (!matchesCategory) return false;
+      console.log("Filtering item:", {
+  name: item.name,
+  cuisineId: item.entityCuisineId,
+  activeCategory,
+  enabledCategories: Array.from(enabledCategories),
+  matchesCategory: activeCategory === "all" || item.entityCuisineId === activeCategory,
+  enabled: item.entityCuisineId
+    ? enabledCategories.has(item.entityCuisineId)
+    : enabledCategories.has("all"),
+});
 
-      // Category enabled check
-      const categoryEnabled = enabledCategories.has(item.category);
       if (!categoryEnabled) return false;
 
       // Search filter
-      const matchesSearch = !searchQuery || 
-        item.name.toLowerCase().includes(searchLower) ||
-        item.description.toLowerCase().includes(searchLower) ||
-        item.itemCode.toLowerCase().includes(searchLower);
+      const matchesSearch =
+        !searchQuery ||
+        (item.name?.toLowerCase() || "").includes(searchLower) ||
+        (item.description?.toLowerCase() || "").includes(searchLower) ||
+        (item.itemCode?.toLowerCase() || "").includes(searchLower);
       if (!matchesSearch) return false;
 
       // Price range filter
-      const matchesPrice = item.price >= priceRange[0] && item.price <= priceRange[1];
+      const matchesPrice =
+        item.price >= priceRange[0] && item.price <= priceRange[1];
       if (!matchesPrice) return false;
 
       // Food type filter
       if (foodTypeFilter !== "all") {
-        if (!item.itemType?.toLowerCase().includes(foodTypeFilter)) return false;
+        if (!item.itemType?.toLowerCase().includes(foodTypeFilter))
+          return false;
       }
 
       // Availability filter
@@ -493,21 +325,35 @@ export default function MenuPage() {
 
       return true;
     });
-  }, [items, activeCategory, enabledCategories, searchQuery, priceRange, availabilityFilter, foodTypeFilter]);
+  }, [
+    items,
+    activeCategory,
+    enabledCategories,
+    searchQuery,
+    priceRange,
+    availabilityFilter,
+    foodTypeFilter,
+  ]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const paginatedItems = useMemo(() => filteredItems.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  ), [filteredItems, currentPage, itemsPerPage]);
+  const paginatedItems = useMemo(
+    () =>
+      filteredItems.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+      ),
+    [filteredItems, currentPage, itemsPerPage]
+  );
 
   return (
-    <div className={cn(
-      "min-h-screen bg-gradient-to-b from-background to-muted/20 pl-64",
-      !mounted && "opacity-0 transition-opacity",
-      mounted && "opacity-100 transition-opacity duration-500"
-    )}>
+    <div
+      className={cn(
+        "min-h-screen bg-gradient-to-b from-background to-muted/20 pl-64",
+        !mounted && "opacity-0 transition-opacity",
+        mounted && "opacity-100 transition-opacity duration-500"
+      )}
+    >
       <NavigationPanel />
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -533,7 +379,7 @@ export default function MenuPage() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Button 
+            <Button
               className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 transition-all duration-300 shadow-lg hover:shadow-xl h-10 px-6"
               onClick={handleAddNewItem}
             >
@@ -555,9 +401,9 @@ export default function MenuPage() {
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <Select
               value={foodTypeFilter}
-              onValueChange={(value: "all" | "veg" | "non-veg" | "egg" | "bar") => 
-                setFoodTypeFilter(value)
-              }
+              onValueChange={(
+                value: "all" | "veg" | "non-veg" | "egg" | "bar"
+              ) => setFoodTypeFilter(value)}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by type" />
@@ -587,7 +433,7 @@ export default function MenuPage() {
             </Select>
             <Select
               value={availabilityFilter}
-              onValueChange={(value: "all" | "available" | "unavailable") => 
+              onValueChange={(value: "all" | "available" | "unavailable") =>
                 setAvailabilityFilter(value)
               }
             >
@@ -618,16 +464,18 @@ export default function MenuPage() {
         </div>
 
         <div className="rounded-xl bg-white/50 backdrop-blur-sm shadow-sm border p-6 space-y-6">
-          <MenuCategoryFilter
+        
+         { categories.length > 0 ? ( <MenuCategoryFilter
             categories={categories}
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
             enabledCategories={enabledCategories}
             onToggleCategory={toggleCategory}
           />
-
-          <MenuItemList 
+         ) : ( <div>Loading ...</div>)}
+          <MenuItemList
             items={paginatedItems}
+            cuisineMap={cuisineMap}
             onEdit={handleEditItem}
             onDelete={(id) => console.log("Delete item:", id)}
             onToggleAvailability={handleToggleAvailability}

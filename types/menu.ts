@@ -9,6 +9,7 @@ export interface MenuItem {
   foodCost: number;
   itemCode: string;
   itemType: string;
+  entityCuisineId: string;
   sortOrder: number;
   isAvailable: boolean;
   isCustomizable?: boolean;
